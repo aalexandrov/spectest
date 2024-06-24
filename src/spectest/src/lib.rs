@@ -1,4 +1,4 @@
-//! A lightweight framework for defining behavior-driven development (BDD) style
+//! A lightweight library for defining behavior-driven development (BDD) style
 //! tests in external files and running them with `cargo test`.
 //!
 //! To write a test:
