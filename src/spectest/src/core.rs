@@ -414,11 +414,11 @@ pub mod examples {
         .to_string()
     }
 
-    pub const INPUT_SQL: &'static str = indoc::indoc! {r"
+    pub const INPUT_SQL: &str = indoc::indoc! {r"
         SELECT x, y, z FROM s JOIN t USING(y);
     "};
 
-    pub const OUTPUT_SQL: &'static str = indoc::indoc! {r"
+    pub const OUTPUT_SQL: &str = indoc::indoc! {r"
         SELECT
             x, y, z
         FROM

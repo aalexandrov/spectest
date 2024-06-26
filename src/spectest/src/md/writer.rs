@@ -47,7 +47,7 @@ impl<'input> MdDocument<'input> {
     pub fn write_to_string(self) -> Result<String, Error> {
         let mut md_writer = MdWriter::new(Vec::new());
         md_writer.write(self)?;
-        let string = String::from_utf8(md_writer.out.write.into());
+        let string = String::from_utf8(md_writer.out.write);
         Ok(string.expect("valid utf8 string in output buffer"))
     }
 
@@ -75,7 +75,7 @@ impl<W> MdWriter<W> {
         }
     }
 
-    fn write<'input>(&mut self, input: MdDocument<'input>) -> Result<(), Error>
+    fn write(&mut self, input: MdDocument<'_>) -> Result<(), Error>
     where
         W: Write,
     {

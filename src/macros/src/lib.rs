@@ -1,5 +1,7 @@
 //! Macros for the [`spectest`](../spectest/index.html) package.
 
+#![allow(clippy::test_attr_in_doctest)]
+
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
@@ -86,7 +88,7 @@ pub fn glob_test(attr: TokenStream, item: TokenStream) -> TokenStream {
         return err.to_compile_error().into();
     };
 
-    let const_prefix_len = glob_resolved.find("*").unwrap_or(0);
+    let const_prefix_len = glob_resolved.find('*').unwrap_or(0);
     let test_attrs = std::iter::repeat(attrs.clone());
     let fn_name = &sig.ident;
     let mut test_sig = Vec::new();
@@ -175,7 +177,7 @@ fn check_signature(sig: &syn::Signature) -> Result<&Ident, TokenStream> {
         let span = if sig.inputs.is_empty() {
             sig.ident.span()
         } else {
-            sig.inputs.iter().skip(1).next().unwrap().span()
+            sig.inputs.iter().nth(1).unwrap().span()
         };
         let msg = "glob_test: annotated function must have exactly one parameter";
         let err = syn::Error::new(span, msg);
@@ -210,18 +212,18 @@ fn check_signature(sig: &syn::Signature) -> Result<&Ident, TokenStream> {
                     mutability: None,
                     ident,
                     subpat: None,
-                }) if attrs.is_empty() => Ok(ident.into()),
+                }) if attrs.is_empty() => Ok(ident),
                 _ => {
                     let msg = "glob_test: function parameter must bind a variable";
                     let err = syn::Error::new(fn_arg.span(), msg);
-                    return Err(err.to_compile_error().into());
+                    Err(err.to_compile_error().into())
                 }
             }
         }
         syn::FnArg::Receiver(_) => {
             let msg = "glob_test: function parameter must not be `self`";
             let err = syn::Error::new(fn_arg.span(), msg);
-            return Err(err.to_compile_error().into());
+            Err(err.to_compile_error().into())
         }
     }
 }

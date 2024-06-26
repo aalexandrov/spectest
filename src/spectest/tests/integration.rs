@@ -1,5 +1,3 @@
-use spectest;
-
 struct MevalHandler<'a> {
     ctx: meval::Context<'a>,
 }
@@ -37,7 +35,7 @@ impl<'a> spectest::Handler for MevalHandler<'a> {
 
     fn example(&mut self, example: &mut spectest::Example) -> Result<(), Self::Error> {
         let Some(input) = example.when.get("input") else {
-            let msg = format!("missing `input` definition in the 'When' spec");
+            let msg = "missing `input` definition in the 'When' spec".to_string();
             return Err(msg);
         };
         let input = match input.parse::<meval::Expr>() {

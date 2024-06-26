@@ -1,5 +1,5 @@
 //! A lightweight framework for defining behavior-driven development (BDD) style
-//! tests in exernal files and running them with `cargo test`.
+//! tests in external files and running them with `cargo test`.
 //!
 //! To write a test:
 //!
@@ -108,13 +108,13 @@ fn event<'a, 'input>(token: &'a Token<'input>) -> &'a Event<'input> {
 
 /// Project the `span` component a `token`.
 #[inline(always = true)]
-fn span<'a, 'input>(token: &'a Token<'input>) -> &'a Range<usize> {
+fn span<'a>(token: &'a Token<'_>) -> &'a Range<usize> {
     &token.1
 }
 
 /// Print a tokens sequence for debugging purposes.
 #[allow(unused)]
-pub(crate) fn debug<'input>(tag: &str, tokens: &[Token<'input>]) {
+pub(crate) fn debug(tag: &str, tokens: &[Token<'_>]) {
     println!("<{tag}>");
     for (i, (event, span)) in tokens.iter().enumerate() {
         println!("{i:03} at: span={span:03?} - event={event:?}");

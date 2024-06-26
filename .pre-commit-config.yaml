@@ -8,3 +8,24 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
+  - repo: local
+    hooks:
+      - id: fmt
+        name: cargo fmt
+        language: system
+        files: '\.rs$'
+        entry: cargo fmt -- --check # rustup run nightly rustfmt
+
+      - id: clippy
+        name: cargo clippy
+        language: system
+        files: '\.rs$'
+        entry: cargo clippy --all-targets --all -- -Dwarnings
+        pass_filenames: false
+
+      - id: test
+        name: cargo test
+        language: system
+        files: '\.rs$'
+        entry: cargo test
+        pass_filenames: false

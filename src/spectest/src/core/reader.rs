@@ -14,7 +14,7 @@ use super::{Background, Example, Raw, Section};
 
 /// Iterate over the [`Sections`](Section) contained in a [`MdDocument`].
 ///
-/// The `input` paramter is a mutable reference because [`Example`] sections
+/// The `input` parameter is a mutable reference because [`Example`] sections
 /// bind their `then` values to the original [`CowStr`] event of the backing
 /// document. This allows the [`crate::spec::process`] function to handle
 /// rewrite requests.
@@ -204,7 +204,7 @@ impl<'a, 'input> Example<'a, &'a mut CowStr<'input>> {
 }
 
 impl Raw {
-    fn from<'a, 'input>(section: &'a mut [Token<'input>]) -> Self {
+    fn from(section: &mut [Token<'_>]) -> Self {
         Self {
             level: util::heading_level(section),
         }
@@ -215,14 +215,13 @@ mod advance {
     use super::*;
 
     /// Find the next heading start tag, consuming everything before that.
-    pub(super) fn section<'a, 'input>(tokens: &mut Tokens<'a, 'input>) -> bool {
+    pub(super) fn section(tokens: &mut Tokens<'_, '_>) -> bool {
         use pulldown_cmark::{Event::*, Tag as S};
 
         let mut finger = 0;
 
-        let result = util::advance(*tokens, &mut finger, |token| match event(token) {
-            Start(S::Heading { .. }) => true,
-            _ => false,
+        let result = util::advance(tokens, &mut finger, |token| {
+            matches!(event(token), Start(S::Heading { .. }))
         });
 
         util::take_mut(tokens, finger);
@@ -230,15 +229,14 @@ mod advance {
         result
     }
 
-    /// Find the next pagagraph start tag, consuming everything before that.
-    pub(super) fn paragraph<'a, 'input>(tokens: &mut Tokens<'a, 'input>) -> bool {
+    /// Find the next paragraph start tag, consuming everything before that.
+    pub(super) fn paragraph(tokens: &mut Tokens<'_, '_>) -> bool {
         use pulldown_cmark::{Event::*, Tag as S};
 
         let mut finger = 0;
 
-        let result = util::advance(*tokens, &mut finger, |token| match event(token) {
-            Start(S::Paragraph) => true,
-            _ => false,
+        let result = util::advance(tokens, &mut finger, |token| {
+            matches!(event(token), Start(S::Paragraph))
         });
 
         util::take_mut(tokens, finger);
@@ -264,7 +262,7 @@ mod expect {
         if tokens.is_empty() {
             return None;
         }
-        let Some(Start(S::Heading { .. })) = tokens.get(0).map(event) else {
+        let Some(Start(S::Heading { .. })) = tokens.first().map(event) else {
             return None;
         };
 
@@ -273,9 +271,8 @@ mod expect {
         finger += 1;
 
         // Advance the finger to the start of the next section.
-        util::advance(*tokens, &mut finger, |token| match event(token) {
-            Start(S::Heading { .. }) => true,
-            _ => false,
+        util::advance(tokens, &mut finger, |token| {
+            matches!(event(token), Start(S::Heading { .. }))
         });
 
         let paragraph = util::take_mut(tokens, finger);
@@ -301,7 +298,7 @@ mod expect {
         if tokens.is_empty() {
             return None;
         }
-        let Some(Start(S::Paragraph)) = tokens.get(0).map(event) else {
+        let Some(Start(S::Paragraph)) = tokens.first().map(event) else {
             return None;
         };
 
@@ -311,9 +308,8 @@ mod expect {
 
         // Advance the finger to the end of the current paragraph, asserting
         // that we have stopped at an the corresponding closing tag.
-        if !util::advance(*tokens, &mut finger, |token| match event(token) {
-            End(E::Paragraph) => true,
-            _ => false,
+        if !util::advance(tokens, &mut finger, |token| {
+            matches!(event(token), End(E::Paragraph))
         }) {
             unreachable!("token stream is not well-formed (missing closing paragraph tag)");
         }
@@ -357,9 +353,8 @@ mod expect {
 
         // Advance the finger to the end of the current code block, asserting
         // that we have stopped at an the corresponding closing tag.
-        if !util::advance(*tokens, &mut finger, |token| match event(token) {
-            End(E::CodeBlock) => true,
-            _ => false,
+        if !util::advance(tokens, &mut finger, |token| {
+            matches!(event(token), End(E::CodeBlock))
         }) {
             unreachable!("token stream is not well-formed (missing closing paragraph tag)");
         }
@@ -380,10 +375,10 @@ mod expect {
 mod util {
     use super::*;
 
-    pub(crate) fn heading_level<'a, 'input>(section: Tokens<'a, 'input>) -> HeadingLevel {
+    pub(crate) fn heading_level(section: Tokens<'_, '_>) -> HeadingLevel {
         use pulldown_cmark::{Event::*, Tag as S};
 
-        if let Some((Start(S::Heading { level, .. }), _)) = section.get(0) {
+        if let Some((Start(S::Heading { level, .. }), _)) = section.first() {
             *level
         } else {
             unreachable!("Asserted by `TokenSlice::next_section()`")
@@ -430,14 +425,14 @@ mod util {
         *finger < tokens.len()
     }
 
-    pub(crate) fn starts_with<'input>(tokens: &[Token<'input>], pat: &str) -> bool {
+    pub(crate) fn starts_with(tokens: &[Token<'_>], pat: &str) -> bool {
         match tokens.first().map(event) {
             Some(Event::Text(t)) => t.starts_with(pat),
             _ => false,
         }
     }
 
-    pub(crate) fn ends_with<'input>(tokens: &[Token<'input>], pat: &str) -> bool {
+    pub(crate) fn ends_with(tokens: &[Token<'_>], pat: &str) -> bool {
         match tokens.last().map(event) {
             Some(Event::Text(t)) => t.ends_with(pat),
             _ => false,
@@ -484,7 +479,7 @@ mod util {
         };
         let Event::Code(key) = event(key) else {
             let pattern = format!("{exp_prefix}`<key>`{exp_suffix}");
-            let pos = span(&key).start;
+            let pos = span(key).start;
             return Some(Err(Error::ExpectedSpecParagraph { pattern, pos }));
         };
 
@@ -685,7 +680,7 @@ mod tests {
             // println!("----");
             for section in sections(&mut md_doc) {
                 let act_error = section.expect_err("example errors");
-                assert_eq!(exp_error, act_error.map_span(&md_source));
+                assert_eq!(exp_error, act_error.map_span(md_source));
                 // println!("----");
             }
         }

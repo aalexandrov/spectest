@@ -10,7 +10,7 @@ impl<'input> MdDocument<'input> {
         // Set up options and parser.
         let mut options = Options::empty();
         options.insert(Options::ENABLE_STRIKETHROUGH);
-        let md_reader = Parser::new_ext(&source, options);
+        let md_reader = Parser::new_ext(source, options);
 
         // Tokenize input
         let tokens = md_reader.into_offset_iter().collect::<Vec<_>>();
