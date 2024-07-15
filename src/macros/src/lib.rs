@@ -82,6 +82,12 @@ pub fn glob_test(attr: TokenStream, item: TokenStream) -> TokenStream {
         return err;
     };
 
+    let test_attr: syn::Attribute = if sig.asyncness.is_some() {
+        syn::parse_quote!(#[tokio::test])
+    } else {
+        syn::parse_quote!(#[test])
+    };
+
     let Ok(paths) = glob::glob(&glob_resolved) else {
         let msg = "glob_test: argument is not a valid glob pattern";
         let err = syn::Error::new(glob_pattern.span(), msg);
@@ -123,9 +129,17 @@ pub fn glob_test(attr: TokenStream, item: TokenStream) -> TokenStream {
                 let path = path.to_str();
 
                 test_block.push({
-                    let value = syn::parse2::<syn::Block>(quote::quote! {
-                        {
-                            #fn_name(#path)
+                    let value = syn::parse2::<syn::Block>(if sig.asyncness.is_some() {
+                        quote::quote! {
+                            {
+                                #fn_name(#path).await
+                            }
+                        }
+                    } else {
+                        quote::quote! {
+                            {
+                                #fn_name(#path)
+                            }
                         }
                     });
                     Box::new(value.expect("test body"))
@@ -165,7 +179,7 @@ pub fn glob_test(attr: TokenStream, item: TokenStream) -> TokenStream {
         //     )*
         // }
 
-        #( #(#test_attrs)* #[test] #vis #test_sig #test_block )*
+        #( #(#test_attrs)* #test_attr #vis #test_sig #test_block )*
     };
 
     // Convert into a token stream and return it
