@@ -90,7 +90,7 @@ use pulldown_cmark::Event;
 pub mod core;
 pub mod md;
 
-pub use core::{run, Background, Error, Example, Handler};
+pub use core::{async_run, run, AsyncHandler, Background, Error, Example, Handler};
 #[cfg(feature = "macros")]
 pub use spectest_macros::glob_test;
 

@@ -5,7 +5,7 @@
 //! [gherkin]: https://cucumber.io/docs/gherkin/reference/
 
 use std::collections::HashMap;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::path::Path;
 
 use pulldown_cmark::{CowStr, HeadingLevel};
@@ -65,7 +65,7 @@ pub struct Raw {
 
 /// A trait to be implemented by spec handlers.
 pub trait Handler {
-    type Error: Debug;
+    type Error: Display;
 
     #[allow(unused)]
     fn enter(&mut self, background: &Background) -> Result<(), Self::Error> {
@@ -78,6 +78,24 @@ pub trait Handler {
     }
 
     fn example(&mut self, example: &mut Example) -> Result<(), Self::Error>;
+}
+
+#[allow(async_fn_in_trait)]
+/// An `async` version of [`Handler`].
+pub trait AsyncHandler {
+    type Error: Display;
+
+    #[allow(unused)]
+    async fn enter<'a>(&'a mut self, background: &'a Background<'a>) -> Result<(), Self::Error> {
+        Ok(()) // Ignore background sections by default.
+    }
+
+    #[allow(unused)]
+    async fn leave<'a>(&'a mut self, background: &'a Background<'a>) -> Result<(), Self::Error> {
+        Ok(()) // Ignore background sections by default.
+    }
+
+    async fn example(&mut self, example: &mut Example) -> Result<(), Self::Error>;
 }
 
 /// Either [`process`] or [`rewrite`] the spec-style [`Sections`](Section)
@@ -103,6 +121,30 @@ where
     } else {
         println!("processing spec at `{path_str}`");
         process(path, handler)
+    };
+
+    if let Err(err) = result {
+        panic!("{err}");
+    }
+}
+
+/// An `async` version of `run`.
+pub async fn async_run<P, H>(path: P, handler: &mut H)
+where
+    P: AsRef<Path>,
+    H: AsyncHandler,
+{
+    let rewrite_specs = std::env::var("REWRITE_SPECS")
+        .map(|var| !["false", "off", "0", ""].contains(&var.to_lowercase().as_ref()))
+        .unwrap_or(false);
+
+    let path_str = path.as_ref().to_str().unwrap_or("unknown");
+    let result = if rewrite_specs {
+        println!("rewriting spec at `{path_str}`");
+        async_rewrite(path, handler).await
+    } else {
+        println!("processing spec at `{path_str}`");
+        async_process(path, handler).await
     };
 
     if let Err(err) = result {
@@ -188,6 +230,77 @@ where
     Ok(())
 }
 
+/// An `async` version of [`process`].
+pub async fn async_process<P, H>(path: P, handler: &mut H) -> Result<(), Error<H::Error>>
+where
+    P: AsRef<Path>,
+    H: AsyncHandler,
+{
+    // Read Markdown source into a String buffer.
+    let md_source = std::fs::read_to_string(&path).expect("file");
+
+    // Parse Markdown source.
+    let mut md_doc = md::MdDocument::from_string(&md_source);
+
+    const EMPTY_VEC: Vec<Background<'_>> = Vec::<Background>::new();
+    let mut active = [EMPTY_VEC; HeadingLevel::H6 as usize - 1];
+
+    // Iterate over spec-style sections in the parsed input.
+    for section in sections(&mut md_doc) {
+        let Ok(section) = section else {
+            let err = section.unwrap_err().map_span(&md_source);
+            return Err(err.into());
+        };
+
+        match section {
+            Section::Background(background) => match handler.enter(&background).await {
+                Ok(()) => active[background.level as usize - 1].push(background),
+                Err(err) => Err(Error::Handler(err))?,
+            },
+            Section::Example(example) => {
+                let Example {
+                    level,
+                    name,
+                    when,
+                    then,
+                } = example;
+
+                let mut example = Example {
+                    level,
+                    name,
+                    when,
+                    then: then.iter().map(|(k, v)| (*k, v.to_string())).collect(),
+                };
+
+                let result = handler.example(&mut example).await;
+                result.map_err(Error::<H::Error>::Handler)?;
+
+                for (key, expect) in then.iter() {
+                    let actual = example.then.get(key).expect("actual");
+                    if expect.as_ref() != actual.as_str() {
+                        return Err(Error::Failure {
+                            key: key.to_string(),
+                            example: name.to_string(),
+                            expected: expect.to_string(),
+                            actual: actual.to_string(),
+                        });
+                    }
+                }
+            }
+            Section::Raw(section) => {
+                for backgrounds in active[section.level as usize - 1..].iter_mut().rev() {
+                    for background in backgrounds.drain(..).rev() {
+                        let result = handler.leave(&background).await;
+                        result.map_err(Error::Handler)?
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
 /// Rewrite spec-style [`Sections`](Section) extracted from a Markdown document
 /// at the given `path` using a user-defined [`Handler`].
 ///
@@ -261,6 +374,72 @@ where
     Ok(())
 }
 
+/// An `async` version of [`rewrite`].
+pub async fn async_rewrite<P, H>(path: P, handler: &mut H) -> Result<(), Error<H::Error>>
+where
+    P: AsRef<Path>,
+    H: AsyncHandler,
+{
+    // Read Markdown source into a String buffer.
+    let md_source = std::fs::read_to_string(&path).expect("file");
+
+    // Parse Markdown source.
+    let mut md_doc = md::MdDocument::from_string(&md_source);
+
+    const EMPTY_VEC: Vec<Background<'_>> = Vec::<Background>::new();
+    let mut active = [EMPTY_VEC; HeadingLevel::H6 as usize - 1];
+
+    // Iterate over spec-style sections in the parsed input.
+    for section in sections(&mut md_doc) {
+        let Ok(section) = section else {
+            let err = section.unwrap_err().map_span(&md_source);
+            return Err(err.into());
+        };
+
+        match section {
+            Section::Background(background) => match handler.enter(&background).await {
+                Ok(()) => active[background.level as usize - 1].push(background),
+                Err(err) => Err(Error::Handler(err))?,
+            },
+            Section::Example(example) => {
+                let Example {
+                    level,
+                    name,
+                    when,
+                    mut then,
+                } = example;
+
+                let mut example = Example {
+                    level,
+                    name,
+                    when,
+                    then: then.iter().map(|(k, v)| (*k, v.to_string())).collect(),
+                };
+
+                let result = handler.example(&mut example).await;
+                result.map_err(Error::<H::Error>::Handler)?;
+
+                for (key, expect) in then.iter_mut() {
+                    let actual = example.then.remove(key).expect("actual");
+                    **expect = CowStr::from(actual);
+                }
+            }
+            Section::Raw(section) => {
+                for backgrounds in active[section.level as usize - 1..].iter_mut().rev() {
+                    for background in backgrounds.drain(..).rev() {
+                        let result = handler.leave(&background).await;
+                        result.map_err(Error::Handler)?
+                    }
+                }
+            }
+        }
+    }
+
+    md_doc.write_to_path(&path)?;
+
+    Ok(())
+}
+
 // Errors
 // ======
 
@@ -271,7 +450,7 @@ pub enum Error<H> {
     SpecReader(#[from] reader::Error<Pos>),
     #[error("md writer error: {0}")]
     MdWriter(#[from] md::writer::Error),
-    #[error("handler error")]
+    #[error("handler error: {0}")]
     Handler(H),
     #[error("unexpected `{key}` in {example}\n# Expected:\n{expected}\n# Actual:\n{actual}")]
     Failure {

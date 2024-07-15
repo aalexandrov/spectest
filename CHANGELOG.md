@@ -9,7 +9,8 @@ adheres to [Semantic Versioning][semver].
 
 ### Added
 
-<!-- TODO -->
+- Add `async` versions of `Handler`, `run`, `process` and `rewrite` and teach
+  `glob_test` to generate correct tests for an annotated `async` function.
 
 ### Changed
 
