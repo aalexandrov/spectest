@@ -201,6 +201,21 @@ impl<W> MdWriter<W> {
             Tag::MetadataBlock(_) => {
                 unsupported_tag!("MetadataBlock");
             }
+            Tag::DefinitionList => {
+                unsupported_tag!("DefinitionList");
+            }
+            Tag::DefinitionListTitle => {
+                unsupported_tag!("DefinitionListTitle");
+            }
+            Tag::DefinitionListDefinition => {
+                unsupported_tag!("DefinitionListDefinition");
+            }
+            Tag::Superscript => {
+                unsupported_tag!("Superscript");
+            }
+            Tag::Subscript => {
+                unsupported_tag!("Subscript");
+            }
         }
         Ok(())
     }
@@ -216,7 +231,7 @@ impl<W> MdWriter<W> {
             TagEnd::Heading(_) => {
                 self.out.write_all("\n".as_ref())?;
             }
-            TagEnd::BlockQuote => {
+            TagEnd::BlockQuote(_) => {
                 unsupported_tag!("BlockQuote");
             }
             TagEnd::CodeBlock => {
@@ -231,7 +246,6 @@ impl<W> MdWriter<W> {
             TagEnd::Item => {
                 unsupported_tag!("Item");
             }
-
             TagEnd::FootnoteDefinition => {
                 unsupported_tag!("FootnoteDefinition");
             }
@@ -264,6 +278,21 @@ impl<W> MdWriter<W> {
             }
             TagEnd::MetadataBlock(_) => {
                 unsupported_tag!("MetadataBlock");
+            }
+            TagEnd::DefinitionList => {
+                unsupported_tag!("DefinitionList");
+            }
+            TagEnd::DefinitionListTitle => {
+                unsupported_tag!("DefinitionListTitle");
+            }
+            TagEnd::DefinitionListDefinition => {
+                unsupported_tag!("DefinitionListDefinition");
+            }
+            TagEnd::Superscript => {
+                unsupported_tag!("Superscript");
+            }
+            TagEnd::Subscript => {
+                unsupported_tag!("Subscript");
             }
         }
         Ok(())

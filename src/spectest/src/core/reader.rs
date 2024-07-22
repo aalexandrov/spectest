@@ -76,7 +76,8 @@ impl<'a> Background<'a> {
         let level = util::heading_level(section);
 
         // Skip the section header.
-        let (heading, mut body) = section.split_at_mut(3);
+        let end = util::heading_level_end(section, &level);
+        let (heading, mut body) = section.split_at_mut(end);
 
         let mut given = HashMap::<&'a str, &'a str>::new();
         while !body.is_empty() {
@@ -124,14 +125,19 @@ impl<'a, 'input> Example<'a, &'a mut CowStr<'input>> {
     }
 
     fn try_from(section: &'a mut [Token<'input>]) -> Result<Self, Error<usize>> {
-        use pulldown_cmark::{CowStr::*, Event::*};
+        use pulldown_cmark::Event::*;
+        use pulldown_cmark_to_cmark::cmark;
 
-        let (heading, mut body) = section.split_at_mut(3);
+        let level = util::heading_level(section);
 
-        let level = util::heading_level(heading);
+        let end = util::heading_level_end(section, &level);
+        let (heading, mut body) = section.split_at_mut(end);
 
-        let Some((Text(Borrowed(name)), _)) = heading.get(1) else {
-            unreachable!("Asserted by `TokenSlice::next_section()`")
+        // Render the heading tokens into markdown and use the resulting string as the name
+        let name = {
+            let mut heading_md = String::new();
+            cmark(heading.iter().map(|(event, _)| event), &mut heading_md).unwrap();
+            heading_md.trim().to_string()
         };
 
         let mut when = HashMap::<&'a str, &'a str>::new();
@@ -383,6 +389,21 @@ mod util {
         } else {
             unreachable!("Asserted by `TokenSlice::next_section()`")
         }
+    }
+
+    pub(crate) fn heading_level_end(section: Tokens<'_, '_>, level: &HeadingLevel) -> usize {
+        use pulldown_cmark::{Event::*, TagEnd as E};
+
+        // Return the index of the first token in the section that is an
+        // End(E::Heading(_)).
+        for (idx, (event, _)) in section.iter().enumerate() {
+            if let End(E::Heading(l)) = event {
+                if l == level {
+                    return idx;
+                }
+            }
+        }
+        unreachable!("Asserted by `TokenSlice::next_section()`")
     }
 
     /// Removes the subslice corresponding to the given range and returns a

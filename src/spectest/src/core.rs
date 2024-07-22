@@ -50,7 +50,7 @@ pub struct Background<'a> {
 #[derive(Debug)]
 pub struct Example<'a, T = String> {
     pub level: HeadingLevel,
-    pub name: &'a str,
+    pub name: String,
     pub when: HashMap<&'a str, &'a str>,
     pub then: HashMap<&'a str, T>,
 }
@@ -194,9 +194,13 @@ where
                     then,
                 } = example;
 
+                if name.ends_with("(ignored)") {
+                    continue;
+                }
+
                 let mut example = Example {
                     level,
-                    name,
+                    name: name.clone(),
                     when,
                     then: then.iter().map(|(k, v)| (*k, v.to_string())).collect(),
                 };
@@ -265,9 +269,13 @@ where
                     then,
                 } = example;
 
+                if name.ends_with("(ignored)") {
+                    continue;
+                }
+
                 let mut example = Example {
                     level,
-                    name,
+                    name: name.clone(),
                     when,
                     then: then.iter().map(|(k, v)| (*k, v.to_string())).collect(),
                 };
@@ -343,6 +351,10 @@ where
                     mut then,
                 } = example;
 
+                if name.ends_with("(ignored)") {
+                    continue;
+                }
+
                 let mut example = Example {
                     level,
                     name,
@@ -408,6 +420,10 @@ where
                     when,
                     mut then,
                 } = example;
+
+                if name.ends_with("(ignored)") {
+                    continue;
+                }
 
                 let mut example = Example {
                     level,
