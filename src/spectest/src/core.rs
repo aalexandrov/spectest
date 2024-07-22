@@ -194,6 +194,10 @@ where
                     then,
                 } = example;
 
+                if name.ends_with("(ignored)") {
+                    continue;
+                }
+
                 let mut example = Example {
                     level,
                     name,
@@ -264,6 +268,10 @@ where
                     when,
                     then,
                 } = example;
+
+                if name.ends_with("(ignored)") {
+                    continue;
+                }
 
                 let mut example = Example {
                     level,
@@ -343,6 +351,10 @@ where
                     mut then,
                 } = example;
 
+                if name.ends_with("(ignored)") {
+                    continue;
+                }
+
                 let mut example = Example {
                     level,
                     name,
@@ -408,6 +420,10 @@ where
                     when,
                     mut then,
                 } = example;
+
+                if name.ends_with("(ignored)") {
+                    continue;
+                }
 
                 let mut example = Example {
                     level,

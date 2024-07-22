@@ -14,7 +14,8 @@ adheres to [Semantic Versioning][semver].
 
 ### Changed
 
-<!-- TODO -->
+- Teach `(async_)process` and `(async_)rewrite` to skip `Example` sections whose
+  name ends with `(ignored)`.
 
 ### Removed
 
