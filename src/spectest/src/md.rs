@@ -18,11 +18,12 @@ pub struct MdDocument<'input> {
 mod roundtrip_tests {
     use spectest_macros::glob_test;
 
+    use crate::core;
     use crate::md;
 
     #[glob_test("testdata/md_writer/**/*.md")]
     fn test(path: &str) {
-        let md_src = std::fs::read_to_string(path).expect("source string");
+        let md_src = core::read_to_string(path).expect("source string");
         let md_doc = md::MdDocument::from_string(&md_src);
         let md_out = md_doc.write_to_string().expect("output string");
 

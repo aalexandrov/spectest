@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::fs::OpenOptions;
+use std::io::Read;
+use std::path::Path;
 
+use fs2::FileExt;
 use pulldown_cmark::{CowStr, Event, HeadingLevel};
 use thiserror::Error;
 
@@ -8,6 +12,17 @@ use crate::md::MdDocument;
 use crate::{event, span, Token, Tokens};
 
 use super::{Background, Example, Raw, Section};
+
+/// Read file contents into a String using a shared lock.
+pub fn read_to_string<P: AsRef<Path>>(path: P) -> std::io::Result<String> {
+    let mut file_buff = String::new();
+
+    let mut file = OpenOptions::new().read(true).open(&path)?;
+    file.lock_shared()?;
+    file.read_to_string(&mut file_buff)?;
+
+    Ok(file_buff)
+}
 
 // Sections iterators
 // ==================

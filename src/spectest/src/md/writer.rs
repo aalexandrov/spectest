@@ -1,8 +1,10 @@
 //! Utilities for writing [`MdDocument`] documents.
 
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
 
+use fs2::FileExt;
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Tag, TagEnd};
 use thiserror::Error;
 
@@ -58,7 +60,14 @@ impl<'input> MdDocument<'input> {
     {
         let mut md_writer = MdWriter::new(Vec::new());
         md_writer.write(self)?;
-        std::fs::write(&path, md_writer.out.write)?;
+
+        // Explicitly open with `OpenOptions` in order to avoid truncating the
+        // file before obtaining the lock.
+        let mut file = OpenOptions::new().write(true).open(&path)?;
+        file.lock_exclusive()?;
+        file.set_len(0)?;
+        file.write_all(md_writer.out.write.as_ref())?;
+
         Ok(())
     }
 }

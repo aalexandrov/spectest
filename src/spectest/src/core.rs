@@ -11,6 +11,7 @@ use std::path::Path;
 use pulldown_cmark::{CowStr, HeadingLevel};
 use thiserror::Error;
 
+pub(crate) use crate::core::reader::read_to_string;
 use crate::core::reader::{sections, Pos};
 use crate::md;
 
@@ -166,7 +167,7 @@ where
     H: Handler,
 {
     // Read Markdown source into a String buffer.
-    let md_source = std::fs::read_to_string(&path).expect("file");
+    let md_source = read_to_string(&path).expect("file");
 
     // Parse Markdown source.
     let mut md_doc = md::MdDocument::from_string(&md_source);
@@ -241,7 +242,7 @@ where
     H: AsyncHandler,
 {
     // Read Markdown source into a String buffer.
-    let md_source = std::fs::read_to_string(&path).expect("file");
+    let md_source = read_to_string(&path).expect("file");
 
     // Parse Markdown source.
     let mut md_doc = md::MdDocument::from_string(&md_source);
@@ -323,7 +324,7 @@ where
     H: Handler,
 {
     // Read Markdown source into a String buffer.
-    let md_source = std::fs::read_to_string(&path).expect("file");
+    let md_source = read_to_string(&path).expect("file");
 
     // Parse Markdown source.
     let mut md_doc = md::MdDocument::from_string(&md_source);
@@ -393,7 +394,7 @@ where
     H: AsyncHandler,
 {
     // Read Markdown source into a String buffer.
-    let md_source = std::fs::read_to_string(&path).expect("file");
+    let md_source = read_to_string(&path).expect("file");
 
     // Parse Markdown source.
     let mut md_doc = md::MdDocument::from_string(&md_source);
@@ -483,10 +484,8 @@ pub enum Error<H> {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::rewrite;
-
     use super::examples::*;
-    use super::{process, Background, Example, Handler};
+    use super::*;
 
     #[test]
     fn test_process() -> std::io::Result<()> {
@@ -546,7 +545,7 @@ mod tests {
         rewrite(&path, &mut TestHandler).expect("`rewrite` call completes cleanly");
 
         let exp = make_spec(INPUT_SQL, "<redacted>");
-        let act = std::fs::read_to_string(&path)?;
+        let act = read_to_string(&path)?;
 
         assert_eq!(act, exp);
 

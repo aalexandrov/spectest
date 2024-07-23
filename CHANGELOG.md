@@ -16,6 +16,9 @@ adheres to [Semantic Versioning][semver].
 
 - Teach `(async_)process` and `(async_)rewrite` to skip `Example` sections whose
   name ends with `(ignored)`.
+- Introduce file locking for all spectest files. This allows users to run tests
+  with `REWRITE_SPECS=1 cargo tests` without worrying about write conflicts in
+  cases where multiple tests interpret the same spectest file.
 
 ### Removed
 
