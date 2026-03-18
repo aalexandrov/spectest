@@ -14,6 +14,7 @@ use thiserror::Error;
 use crate::core::reader::{sections, Pos};
 use crate::md;
 
+mod ast;
 mod reader;
 
 // Data model

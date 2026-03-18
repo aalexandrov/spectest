@@ -15,6 +15,8 @@ use super::MdDocument;
 pub enum Error {
     #[error("io error")]
     IO(#[from] std::io::Error),
+    #[error("fmt error")]
+    Fmt(#[from] std::fmt::Error),
     #[error("unsupported pulldown_cmark event type {0}")]
     UnsupportedEvent(&'static str),
     #[error("unsupported pulldown_cmark start tag {0}")]
@@ -190,7 +192,7 @@ impl<W> MdWriter<W> {
                 self.out.write_all("**".as_ref())?;
             }
             Tag::Strikethrough => {
-                self.out.write_all("~".as_ref())?;
+                self.out.write_all("~~".as_ref())?;
             }
             Tag::Link { .. } => {
                 unsupported_tag!("Link");
@@ -200,21 +202,6 @@ impl<W> MdWriter<W> {
             }
             Tag::MetadataBlock(_) => {
                 unsupported_tag!("MetadataBlock");
-            }
-            Tag::DefinitionList => {
-                unsupported_tag!("DefinitionList");
-            }
-            Tag::DefinitionListTitle => {
-                unsupported_tag!("DefinitionListTitle");
-            }
-            Tag::DefinitionListDefinition => {
-                unsupported_tag!("DefinitionListDefinition");
-            }
-            Tag::Superscript => {
-                unsupported_tag!("Superscript");
-            }
-            Tag::Subscript => {
-                unsupported_tag!("Subscript");
             }
         }
         Ok(())
@@ -231,7 +218,7 @@ impl<W> MdWriter<W> {
             TagEnd::Heading(_) => {
                 self.out.write_all("\n".as_ref())?;
             }
-            TagEnd::BlockQuote(_) => {
+            TagEnd::BlockQuote => {
                 unsupported_tag!("BlockQuote");
             }
             TagEnd::CodeBlock => {
@@ -268,7 +255,7 @@ impl<W> MdWriter<W> {
                 self.out.write_all("**".as_ref())?;
             }
             TagEnd::Strikethrough => {
-                self.out.write_all("~".as_ref())?;
+                self.out.write_all("~~".as_ref())?;
             }
             TagEnd::Link => {
                 unsupported_tag!("Link");
@@ -278,21 +265,6 @@ impl<W> MdWriter<W> {
             }
             TagEnd::MetadataBlock(_) => {
                 unsupported_tag!("MetadataBlock");
-            }
-            TagEnd::DefinitionList => {
-                unsupported_tag!("DefinitionList");
-            }
-            TagEnd::DefinitionListTitle => {
-                unsupported_tag!("DefinitionListTitle");
-            }
-            TagEnd::DefinitionListDefinition => {
-                unsupported_tag!("DefinitionListDefinition");
-            }
-            TagEnd::Superscript => {
-                unsupported_tag!("Superscript");
-            }
-            TagEnd::Subscript => {
-                unsupported_tag!("Subscript");
             }
         }
         Ok(())

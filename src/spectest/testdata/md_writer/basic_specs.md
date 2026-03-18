@@ -1,7 +1,7 @@
 # Feature: AST to AST conversion
 
 Note: that specs support rich text formatting.
-In particular, rewrites preserve _emphasized text_, **bold text** and ~strikethrough text~!
+In particular, rewrites preserve _emphasized text_, **bold text** and ~~strikethrough text~~!
 
 ## Background
 
