@@ -1,8 +1,3 @@
-# Feature: AST to AST conversion
-
-Note: that specs support rich text formatting.
-In particular, rewrites preserve _emphasized text_, **bold text** and ~~strikethrough text~~!
-
 ## Background
 
 Given `pipeline` as:
@@ -18,6 +13,11 @@ CREATE TABLE s(x int, y int);
 CREATE TABLE t(x int, y int);
 ```
 
+and:
+
+- `foo` as `boo`,
+- `bar` as `baz`.
+
 ## Example: Constant queries (1)
 
 When `input` is:
@@ -32,15 +32,9 @@ Then `output` is:
 SELECT 1;
 ```
 
-## Example: Linear queries (2)
+### Example: Linear queries (2)
 
-When `input` is:
-
-```sql
-SELECT '_foo_' as x, '*bar*' as y;
-```
-
-Then `output` is:
+When `input` is `SELECT '_foo_' as x, '*bar*' as y;` then `output` is:
 
 ```sql
 SELECT
