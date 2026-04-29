@@ -101,13 +101,13 @@ type Token<'input> = (Event<'input>, Range<usize>);
 type Tokens<'a, 'input> = &'a mut [Token<'input>];
 
 /// Project the `event` component a `token`.
-#[inline(always = true)]
+#[inline(always)]
 fn event<'a, 'input>(token: &'a Token<'input>) -> &'a Event<'input> {
     &token.0
 }
 
 /// Project the `span` component a `token`.
-#[inline(always = true)]
+#[inline(always)]
 fn span<'a>(token: &'a Token<'_>) -> &'a Range<usize> {
     &token.1
 }
